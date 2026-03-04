@@ -166,7 +166,6 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
 
   const handleRulesSave = (id: string, data: {
     displayConditionJson: string;
-    payloadTemplateJson: string;
     eSignatureMappingJson: string;
     endpoints: import("@/lib/types").EndpointConfig[];
   }) => {
@@ -176,7 +175,6 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
           ? {
               ...r,
               rulesJson: data.displayConditionJson,
-              payloadTemplateJson: data.payloadTemplateJson,
               eSignatureMappingJson: data.eSignatureMappingJson,
               endpoints: data.endpoints,
               updatedAt: new Date().toISOString(),
@@ -225,12 +223,12 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
               placeholder="Search forms..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-              className="pl-9 h-9"
+              className="pl-9 h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none"
             />
           </div>
 
           <Select value={filterCustodian} onValueChange={(v) => { setFilterCustodian(v); resetPage(); }}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-[140px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Custodian" />
             </SelectTrigger>
             <SelectContent>
@@ -242,7 +240,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
           </Select>
 
           <Select value={filterType} onValueChange={(v) => { setFilterType(v); resetPage(); }}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[160px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Type" />
             </SelectTrigger>
             <SelectContent>
@@ -254,7 +252,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
           </Select>
 
           <Select value={filterReg} onValueChange={(v) => { setFilterReg(v); resetPage(); }}>
-            <SelectTrigger className="w-[150px] h-9">
+            <SelectTrigger className="w-[150px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Registration" />
             </SelectTrigger>
             <SelectContent>
@@ -266,7 +264,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
           </Select>
 
           <Select value={filterEndpoint} onValueChange={(v) => { setFilterEndpoint(v); resetPage(); }}>
-            <SelectTrigger className="w-[150px] h-9">
+            <SelectTrigger className="w-[150px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Endpoint" />
             </SelectTrigger>
             <SelectContent>
@@ -302,7 +300,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
           }}
         />
       ) : (
-        <div className="border rounded-lg overflow-auto">
+        <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -406,9 +404,8 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
             onOpenChange={setRulesModalOpen}
             title={`${targetRule?.formTemplateName ?? "Form"}`}
             displayConditionJson={targetRule?.rulesJson ?? "{}"}
-            payloadTemplateJson={targetRule?.payloadTemplateJson ?? "{}"}
             eSignatureMappingJson={targetRule?.eSignatureMappingJson ?? "{}"}
-            endpoints={targetRule?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const }]}
+            endpoints={targetRule?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const, payloadTemplateJson: "{}" }]}
             globalEndpoints={globalEndpoints}
             onSave={(data) => handleRulesSave(rulesModalTarget, data)}
           />
@@ -469,9 +466,8 @@ function AddEditCustodianDialog({
       formTemplateId: formTemplateId || "tmpl-unset",
       formTemplateName: selectedTemplate?.name ?? "Untitled form",
       rulesJson: initial?.rulesJson ?? JSON.stringify({ conditions: [] }, null, 2),
-      payloadTemplateJson: initial?.payloadTemplateJson ?? JSON.stringify({}, null, 2),
       eSignatureMappingJson: initial?.eSignatureMappingJson ?? JSON.stringify({}, null, 2),
-      endpoints: initial?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf" as const, endpointUsage: "pdf" as const }],
+      endpoints: initial?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf" as const, endpointUsage: "pdf" as const, payloadTemplateJson: JSON.stringify({}, null, 2) }],
       enabled: initial?.enabled ?? true,
       updatedAt: new Date().toISOString(),
     };
@@ -495,7 +491,7 @@ function AddEditCustodianDialog({
               <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
                 <Label className="text-muted-foreground shrink-0 w-[100px]">Custodian is</Label>
                 <Select value={custodian} onValueChange={(v) => setCustodian(v as Custodian)}>
-                  <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+                  <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
                   <SelectContent>
                     {CUSTODIANS.map((c) => (
                       <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -508,7 +504,7 @@ function AddEditCustodianDialog({
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
                   <Label className="text-muted-foreground shrink-0 w-[100px]">Transaction is</Label>
                   <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
                     <SelectContent>
                       {TRANSACTION_TYPES.map((t) => (
                         <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -522,7 +518,7 @@ function AddEditCustodianDialog({
                 <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
                   <Label className="text-muted-foreground shrink-0 w-[100px]">Registration is</Label>
                   <Select value={registrationType} onValueChange={(v) => setRegistrationType(v as RegistrationType)}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
                     <SelectContent>
                       {REGISTRATION_TYPES.map((r) => (
                         <SelectItem key={r} value={r}>{r}</SelectItem>
@@ -544,7 +540,7 @@ function AddEditCustodianDialog({
                 <div className="flex items-center gap-2">
                   <Label className="text-muted-foreground shrink-0 w-[100px]">Form template</Label>
                   <Select value={formTemplateId} onValueChange={setFormTemplateId}>
-                    <SelectTrigger className="flex-1"><SelectValue placeholder="Select a template..." /></SelectTrigger>
+                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select a template..." /></SelectTrigger>
                     <SelectContent>
                       {FORM_TEMPLATES.map((t) => (
                         <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>

@@ -127,7 +127,7 @@ export function RulesCell({ onClick, hasRules }: { onClick: () => void; hasRules
   return (
     <button
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-muted hover:bg-muted/80 transition-colors border border-border"
+      className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-background hover:bg-muted/50 transition-colors border border-border"
     >
       {hasRules ? "View rules" : "Add rules"}
     </button>

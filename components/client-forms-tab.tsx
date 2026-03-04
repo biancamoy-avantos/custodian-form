@@ -143,7 +143,6 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
 
   const handleRulesSave = (id: string, data: {
     displayConditionJson: string;
-    payloadTemplateJson: string;
     eSignatureMappingJson: string;
     endpoints: import("@/lib/types").EndpointConfig[];
   }) => {
@@ -153,7 +152,6 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
           ? {
               ...r,
               rulesJson: data.displayConditionJson,
-              payloadTemplateJson: data.payloadTemplateJson,
               eSignatureMappingJson: data.eSignatureMappingJson,
               updatedAt: new Date().toISOString(),
             }
@@ -199,12 +197,12 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
               placeholder="Search forms..."
               value={search}
               onChange={(e) => { setSearch(e.target.value); resetPage(); }}
-              className="pl-9 h-9"
+              className="pl-9 h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none"
             />
           </div>
 
           <Select value={filterOrg} onValueChange={(v) => { setFilterOrg(v); resetPage(); }}>
-            <SelectTrigger className="w-[140px] h-9">
+            <SelectTrigger className="w-[140px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Client" />
             </SelectTrigger>
             <SelectContent>
@@ -216,7 +214,7 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
           </Select>
 
           <Select value={filterFormType} onValueChange={(v) => { setFilterFormType(v); resetPage(); }}>
-            <SelectTrigger className="w-[160px] h-9">
+            <SelectTrigger className="w-[160px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Form type" />
             </SelectTrigger>
             <SelectContent>
@@ -228,7 +226,7 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
           </Select>
 
           <Select value={filterRole} onValueChange={(v) => { setFilterRole(v); resetPage(); }}>
-            <SelectTrigger className="w-[170px] h-9">
+            <SelectTrigger className="w-[170px] h-9 bg-[rgba(105,105,105,0.051)] border-none shadow-none">
               <SelectValue placeholder="Role type" />
             </SelectTrigger>
             <SelectContent>
@@ -260,7 +258,7 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
           onAction={() => { setEditingRule(null); setAddDialogOpen(true); }}
         />
       ) : (
-        <div className="border rounded-lg overflow-auto">
+        <div className="border rounded-lg overflow-hidden">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -366,9 +364,8 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
             onOpenChange={setRulesModalOpen}
             title={`${targetRule?.formName ?? "Form"}`}
             displayConditionJson={targetRule?.rulesJson ?? "{}"}
-            payloadTemplateJson={targetRule?.payloadTemplateJson ?? "{}"}
             eSignatureMappingJson={targetRule?.eSignatureMappingJson ?? "{}"}
-            endpoints={[{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const }]}
+            endpoints={[{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const, payloadTemplateJson: "{}" }]}
             globalEndpoints={globalEndpoints}
             onSave={(data) => handleRulesSave(rulesModalTarget, data)}
           />
@@ -428,7 +425,6 @@ function AddEditClientDialog({
       formType: formType as ClientFormType,
       roleType: roleType as RoleType,
       rulesJson: initial?.rulesJson ?? JSON.stringify({ conditions: [] }, null, 2),
-      payloadTemplateJson: initial?.payloadTemplateJson ?? JSON.stringify({}, null, 2),
       eSignatureMappingJson: initial?.eSignatureMappingJson ?? JSON.stringify({}, null, 2),
       description,
       enabled: initial?.enabled ?? true,
@@ -451,7 +447,7 @@ function AddEditClientDialog({
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
               placeholder="e.g., Guardian Privacy Notice"
-              className="flex-1"
+              className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"
             />
           </div>
 
@@ -462,7 +458,7 @@ function AddEditClientDialog({
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Brief description of when this form is included..."
               rows={2}
-              className="flex-1 resize-none"
+              className="flex-1 resize-none bg-[rgba(105,105,105,0.051)] border-none shadow-none"
             />
           </div>
 
@@ -471,7 +467,7 @@ function AddEditClientDialog({
           <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
             <Label className="text-muted-foreground shrink-0 w-[100px]"><span>Client org<span className="text-foreground">*</span></span></Label>
             <Select value={clientOrg} onValueChange={(v) => setClientOrg(v as ClientOrg)}>
-              <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+              <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
               <SelectContent>
                 {CLIENT_ORGS.map((c) => (
                   <SelectItem key={c} value={c}>{c}</SelectItem>
@@ -484,7 +480,7 @@ function AddEditClientDialog({
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
               <Label className="text-muted-foreground shrink-0 w-[100px]"><span>Form type<span className="text-foreground">*</span></span></Label>
               <Select value={formType} onValueChange={(v) => setFormType(v as ClientFormType)}>
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   {FORM_TYPES.map((t) => (
                     <SelectItem key={t} value={t}>{t}</SelectItem>
@@ -498,7 +494,7 @@ function AddEditClientDialog({
             <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
               <Label className="text-muted-foreground shrink-0 w-[100px]"><span>Role type<span className="text-foreground">*</span></span></Label>
               <Select value={roleType} onValueChange={(v) => setRoleType(v as RoleType)}>
-                <SelectTrigger className="flex-1"><SelectValue placeholder="Select..." /></SelectTrigger>
+                <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
                 <SelectContent>
                   {ROLE_TYPES.map((r) => (
                     <SelectItem key={r} value={r}>{r.replace(/_/g, " ")}</SelectItem>
