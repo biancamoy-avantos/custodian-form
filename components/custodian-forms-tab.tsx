@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo } from "react";
 import {
   Table,
   TableBody,
@@ -27,14 +27,6 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import {
   Plus,
   Search,
   MoreHorizontal,
@@ -42,18 +34,16 @@ import {
   Trash2,
   Copy,
   ArrowUpDown,
-  Braces,
 } from "lucide-react";
 import type {
   CustodianFormRule,
   Custodian,
   TransactionType,
   RegistrationType,
-  GlobalEndpoint,
 } from "@/lib/types";
-import { CUSTODIAN_FORM_RULES, FORM_TEMPLATES } from "@/lib/sample-data";
+import { CUSTODIAN_FORM_RULES } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
-import { CustodianBadge, RulesCell, EndpointsCell, EmptyState } from "./shared";
+import { CustodianBadge, EndpointsCell, EmptyState } from "./shared";
 import { RulesModal } from "./rules-modal";
 import { TablePagination } from "./table-pagination";
 
@@ -87,7 +77,7 @@ const REGISTRATION_TYPES: RegistrationType[] = [
   "Partnership",
 ];
 
-export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: GlobalEndpoint[] }) {
+export function CustodianFormsTab() {
   const [rules, setRules] = useState<CustodianFormRule[]>(CUSTODIAN_FORM_RULES);
   const [search, setSearch] = useState("");
   const [filterCustodian, setFilterCustodian] = useState<string>("all");
@@ -95,13 +85,10 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
   const [filterReg, setFilterReg] = useState<string>("all");
   const [filterEndpoint, setFilterEndpoint] = useState<string>("all");
 
-  // Rules modal state
+  // Rules modal state (unified add/edit modal)
   const [rulesModalOpen, setRulesModalOpen] = useState(false);
-  const [rulesModalTarget, setRulesModalTarget] = useState<string | null>(null);
-
-  // Add/edit dialog state
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [editingRule, setEditingRule] = useState<CustodianFormRule | null>(null);
+  const [rulesModalTarget, setRulesModalTarget] = useState<CustodianFormRule | null>(null);
+  const [rulesModalMode, setRulesModalMode] = useState<"add" | "edit">("edit");
 
   // Pagination
   const [currentPage, setCurrentPage] = useState(1);
@@ -164,24 +151,62 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
     }
   };
 
-  const handleRulesSave = (id: string, data: {
+  const handleRulesSave = (id: string | null, data: {
     displayConditionJson: string;
+    payloadTemplateJson: string;
     eSignatureMappingJson: string;
     endpoints: import("@/lib/types").EndpointConfig[];
+    formDetails?: {
+      custodian: import("@/lib/types").Custodian;
+      transactionType: import("@/lib/types").TransactionType;
+      registrationType: import("@/lib/types").RegistrationType;
+      formTemplateId: string;
+      formTemplateName: string;
+    };
   }) => {
-    setRules((prev) =>
-      prev.map((r) =>
-        r.id === id
-          ? {
-              ...r,
-              rulesJson: data.displayConditionJson,
-              eSignatureMappingJson: data.eSignatureMappingJson,
-              endpoints: data.endpoints,
-              updatedAt: new Date().toISOString(),
-            }
-          : r
-      )
-    );
+    if (id) {
+      // Editing existing rule
+      setRules((prev) =>
+        prev.map((r) =>
+          r.id === id
+            ? {
+                ...r,
+                ...(data.formDetails ? {
+                  custodian: data.formDetails.custodian,
+                  transactionType: data.formDetails.transactionType,
+                  registrationType: data.formDetails.registrationType,
+                  formTemplateId: data.formDetails.formTemplateId,
+                  formTemplateName: data.formDetails.formTemplateName,
+                } : {}),
+                rulesJson: data.displayConditionJson,
+                payloadTemplateJson: data.payloadTemplateJson,
+                eSignatureMappingJson: data.eSignatureMappingJson,
+                endpoints: data.endpoints,
+                updatedAt: new Date().toISOString(),
+              }
+            : r
+        )
+      );
+    } else if (data.formDetails) {
+      // Adding new rule
+      const newRule: CustodianFormRule = {
+        id: `cfr-${Date.now()}`,
+        custodian: data.formDetails.custodian,
+        transactionType: data.formDetails.transactionType,
+        registrationType: data.formDetails.registrationType,
+        formTemplateId: data.formDetails.formTemplateId,
+        formTemplateName: data.formDetails.formTemplateName,
+        rulesJson: data.displayConditionJson,
+        payloadTemplateJson: data.payloadTemplateJson,
+        eSignatureMappingJson: data.eSignatureMappingJson,
+        endpoints: data.endpoints,
+        enabled: true,
+        updatedAt: new Date().toISOString(),
+      };
+      setRules((prev) => [newRule, ...prev]);
+    }
+    setAddDialogOpen(false);
+    setEditingRule(null);
   };
 
   const handleDelete = (id: string) => {
@@ -198,16 +223,6 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
     setRules((prev) => [dup, ...prev]);
   };
 
-  const handleAddOrEditSave = (rule: CustodianFormRule) => {
-    if (editingRule) {
-      setRules((prev) => prev.map((r) => (r.id === rule.id ? rule : r)));
-    } else {
-      setRules((prev) => [rule, ...prev]);
-    }
-    setAddDialogOpen(false);
-    setEditingRule(null);
-  };
-
   const renderSort = (field: keyof CustodianFormRule, label: string) => (
     <SortHeader label={label} active={sortField === field} onClick={() => toggleSort(field)} />
   );
@@ -217,7 +232,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
       {/* Toolbar */}
       <div className="flex items-center justify-between gap-4 shrink-0">
         <div className="flex items-center gap-2 flex-1">
-          <div className="relative flex-1 max-w-sm">
+          <div className="relative flex-1 max-w-[240px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search forms..."
@@ -278,12 +293,27 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
         <Button
           size="sm"
           onClick={() => {
-            setEditingRule(null);
-            setAddDialogOpen(true);
+            setRulesModalMode("add");
+            // Start with blank form details; RulesModal will collect them
+            setRulesModalTarget({
+              id: "",
+              custodian: "Fidelity" as Custodian,
+              transactionType: "New account" as TransactionType,
+              registrationType: "Individual" as RegistrationType,
+              formTemplateId: "",
+              formTemplateName: "",
+              rulesJson: JSON.stringify({ conditions: [] }, null, 2),
+              payloadTemplateJson: JSON.stringify({}, null, 2),
+              eSignatureMappingJson: JSON.stringify({}, null, 2),
+              endpoints: [],
+              enabled: true,
+              updatedAt: new Date().toISOString(),
+            });
+            setRulesModalOpen(true);
           }}
         >
           <Plus className="h-4 w-4 mr-1" />
-          Add rule
+          Add
         </Button>
       </div>
 
@@ -293,14 +323,28 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
         <EmptyState
           title="No custodian form rules"
           description="Rules define which forms to render based on account configuration. Add your first rule to get started."
-          actionLabel="Add rule"
+          actionLabel="Add"
           onAction={() => {
-            setEditingRule(null);
-            setAddDialogOpen(true);
+            setRulesModalMode("add");
+            setRulesModalTarget({
+              id: "",
+              custodian: "Fidelity" as Custodian,
+              transactionType: "New account" as TransactionType,
+              registrationType: "Individual" as RegistrationType,
+              formTemplateId: "",
+              formTemplateName: "",
+              rulesJson: JSON.stringify({ conditions: [] }, null, 2),
+              payloadTemplateJson: JSON.stringify({}, null, 2),
+              eSignatureMappingJson: JSON.stringify({}, null, 2),
+              endpoints: [],
+              enabled: true,
+              updatedAt: new Date().toISOString(),
+            });
+            setRulesModalOpen(true);
           }}
         />
       ) : (
-        <div className="border rounded-lg overflow-hidden">
+        <div className="border rounded-lg overflow-auto">
           <Table>
             <TableHeader>
               <TableRow className="hover:bg-transparent">
@@ -309,7 +353,6 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
                 <TableHead className="w-[120px]">{renderSort("registrationType", "Registration")}</TableHead>
                 <TableHead>{renderSort("formTemplateName", "Form template")}</TableHead>
                 <TableHead className="w-[140px]">Endpoints</TableHead>
-                <TableHead className="w-[100px]">Rules</TableHead>
                 <TableHead className="w-[50px]" />
               </TableRow>
             </TableHeader>
@@ -332,15 +375,6 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
                     <EndpointsCell endpoints={rule.endpoints} />
                   </TableCell>
                   <TableCell>
-                    <RulesCell
-                      hasRules={rule.rulesJson !== "{}"}
-                      onClick={() => {
-                        setRulesModalTarget(rule.id);
-                        setRulesModalOpen(true);
-                      }}
-                    />
-                  </TableCell>
-                  <TableCell>
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
                         <Button variant="ghost" size="icon" className="h-8 w-8">
@@ -349,18 +383,12 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
                         <DropdownMenuItem onClick={() => {
-                          setEditingRule(rule);
-                          setAddDialogOpen(true);
+                          setRulesModalMode("edit");
+                          setRulesModalTarget(rule);
+                          setRulesModalOpen(true);
                         }}>
                           <Pencil className="h-4 w-4 mr-2" />
                           Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => {
-                          setRulesModalTarget(rule.id);
-                          setRulesModalOpen(true);
-                        }}>
-                          <Braces className="h-4 w-4 mr-2" />
-                          Edit rules
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={() => handleDuplicate(rule)}>
                           <Copy className="h-4 w-4 mr-2" />
@@ -371,7 +399,7 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
                           className="text-destructive focus:text-destructive"
                           onClick={() => handleDelete(rule.id)}
                         >
-                          <Trash2 className="h-4 w-4 mr-2 text-destructive" />
+                          <Trash2 className="h-4 w-4 mr-2" />
                           Delete
                         </DropdownMenuItem>
                       </DropdownMenuContent>
@@ -395,173 +423,32 @@ export function CustodianFormsTab({ globalEndpoints = [] }: { globalEndpoints?: 
       </div>
       </div>
 
-      {/* Rules Modal */}
-      {rulesModalTarget && (() => {
-        const targetRule = rules.find((r) => r.id === rulesModalTarget);
-        return (
-          <RulesModal
-            open={rulesModalOpen}
-            onOpenChange={setRulesModalOpen}
-            title={`${targetRule?.formTemplateName ?? "Form"}`}
-            displayConditionJson={targetRule?.rulesJson ?? "{}"}
-            eSignatureMappingJson={targetRule?.eSignatureMappingJson ?? "{}"}
-            endpoints={targetRule?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const, payloadTemplateJson: "{}" }]}
-            globalEndpoints={globalEndpoints}
-            onSave={(data) => handleRulesSave(rulesModalTarget, data)}
-          />
-        );
-      })()}
-
-      {/* Add / Edit Dialog */}
-      <AddEditCustodianDialog
-        open={addDialogOpen}
-        onOpenChange={(o) => {
-          setAddDialogOpen(o);
-          if (!o) setEditingRule(null);
-        }}
-        initial={editingRule}
-        onSave={handleAddOrEditSave}
-      />
+      {/* Rules Modal - Used for both adding and editing rules */}
+      {rulesModalOpen && rulesModalTarget && (
+        <RulesModal
+          open={rulesModalOpen}
+          onOpenChange={(o) => {
+            setRulesModalOpen(o);
+            if (!o) {
+              setRulesModalTarget(null);
+            }
+          }}
+          title={rulesModalMode === "add" ? "Add Form Rule" : (rulesModalTarget.formTemplateName || "Form")}
+          displayConditionJson={rulesModalTarget.rulesJson ?? JSON.stringify({ conditions: [] }, null, 2)}
+          payloadTemplateJson={rulesModalTarget.payloadTemplateJson ?? "{}"}
+          eSignatureMappingJson={rulesModalTarget.eSignatureMappingJson ?? "{}"}
+          endpoints={rulesModalTarget.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const }]}
+          mode={rulesModalMode}
+          formDetails={{
+            custodian: rulesModalMode === "add" ? "" : rulesModalTarget.custodian,
+            transactionType: rulesModalMode === "add" ? "" : rulesModalTarget.transactionType,
+            registrationType: rulesModalMode === "add" ? "" : rulesModalTarget.registrationType,
+            formTemplateId: rulesModalMode === "add" ? "" : rulesModalTarget.formTemplateId,
+          }}
+          onSave={(data) => handleRulesSave(rulesModalMode === "add" ? null : rulesModalTarget.id, data)}
+        />
+      )}
     </div>
   );
 }
 
-// ─── Add / Edit Dialog ───────────────────────────────────────────────
-
-function AddEditCustodianDialog({
-  open,
-  onOpenChange,
-  initial,
-  onSave,
-}: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-  initial: CustodianFormRule | null;
-  onSave: (rule: CustodianFormRule) => void;
-}) {
-  const isEdit = !!initial;
-  const [custodian, setCustodian] = useState<Custodian | "">(initial?.custodian ?? "");
-  const [transactionType, setTransactionType] = useState<TransactionType | "">(initial?.transactionType ?? "");
-  const [registrationType, setRegistrationType] = useState<RegistrationType | "">(initial?.registrationType ?? "");
-  const [formTemplateId, setFormTemplateId] = useState(initial?.formTemplateId ?? "");
-
-  useEffect(() => {
-    if (open) {
-      setCustodian(initial?.custodian ?? "");
-      setTransactionType(initial?.transactionType ?? "");
-      setRegistrationType(initial?.registrationType ?? "");
-      setFormTemplateId(initial?.formTemplateId ?? "");
-    }
-  }, [open, initial]);
-
-  const selectedTemplate = FORM_TEMPLATES.find((t) => t.id === formTemplateId);
-
-  const handleSave = () => {
-    if (!custodian || !transactionType || !registrationType || !formTemplateId) return;
-    const rule: CustodianFormRule = {
-      id: initial?.id ?? `cfr-${Date.now()}`,
-      custodian: custodian as Custodian,
-      transactionType: transactionType as TransactionType,
-      registrationType: registrationType as RegistrationType,
-      formTemplateId: formTemplateId || "tmpl-unset",
-      formTemplateName: selectedTemplate?.name ?? "Untitled form",
-      rulesJson: initial?.rulesJson ?? JSON.stringify({ conditions: [] }, null, 2),
-      eSignatureMappingJson: initial?.eSignatureMappingJson ?? JSON.stringify({}, null, 2),
-      endpoints: initial?.endpoints ?? [{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf" as const, endpointUsage: "pdf" as const, payloadTemplateJson: JSON.stringify({}, null, 2) }],
-      enabled: initial?.enabled ?? true,
-      updatedAt: new Date().toISOString(),
-    };
-    onSave(rule);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-md h-[396px] flex flex-col">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit" : "Add"} custodian form rule</DialogTitle>
-        </DialogHeader>
-
-        <div className="space-y-5 py-2">
-          <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">When</span>
-              <div className="h-px flex-1 bg-border" />
-            </div>
-            <div className="space-y-3 pl-1">
-              <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
-                <Label className="text-muted-foreground shrink-0 w-[100px]">Custodian is</Label>
-                <Select value={custodian} onValueChange={(v) => setCustodian(v as Custodian)}>
-                  <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
-                  <SelectContent>
-                    {CUSTODIANS.map((c) => (
-                      <SelectItem key={c} value={c}>{c}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {custodian && (
-                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
-                  <Label className="text-muted-foreground shrink-0 w-[100px]">Transaction is</Label>
-                  <Select value={transactionType} onValueChange={(v) => setTransactionType(v as TransactionType)}>
-                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
-                    <SelectContent>
-                      {TRANSACTION_TYPES.map((t) => (
-                        <SelectItem key={t} value={t}>{t}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-
-              {custodian && transactionType && (
-                <div className="flex items-center gap-2 animate-in fade-in slide-in-from-bottom-1 duration-200">
-                  <Label className="text-muted-foreground shrink-0 w-[100px]">Registration is</Label>
-                  <Select value={registrationType} onValueChange={(v) => setRegistrationType(v as RegistrationType)}>
-                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select..." /></SelectTrigger>
-                    <SelectContent>
-                      {REGISTRATION_TYPES.map((r) => (
-                        <SelectItem key={r} value={r}>{r}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {custodian && transactionType && registrationType && (
-            <div className="space-y-3 animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Then show</span>
-                <div className="h-px flex-1 bg-border" />
-              </div>
-              <div className="pl-1">
-                <div className="flex items-center gap-2">
-                  <Label className="text-muted-foreground shrink-0 w-[100px]">Form template</Label>
-                  <Select value={formTemplateId} onValueChange={setFormTemplateId}>
-                    <SelectTrigger className="flex-1 bg-[rgba(105,105,105,0.051)] border-none shadow-none"><SelectValue placeholder="Select a template..." /></SelectTrigger>
-                    <SelectContent>
-                      {FORM_TEMPLATES.map((t) => (
-                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <DialogFooter className="mt-auto">
-          <Button variant="outline" onClick={() => onOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={!custodian || !transactionType || !registrationType || !formTemplateId}>
-            {isEdit ? "Save changes" : "Add rule"}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
-  );
-}

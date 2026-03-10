@@ -55,7 +55,6 @@ import type {
   ClientOrg,
   ClientFormType,
   RoleType,
-  GlobalEndpoint,
 } from "@/lib/types";
 import { CLIENT_FORM_RULES } from "@/lib/sample-data";
 import { cn } from "@/lib/utils";
@@ -82,7 +81,7 @@ const CLIENT_ORGS: ClientOrg[] = ["Guardian", "Park Avenue", "Mercer"];
 const FORM_TYPES: ClientFormType[] = ["PDF", "Disclosure", "Signature addendum", "Supplemental"];
 const ROLE_TYPES: RoleType[] = ["per_account", "per_person", "per_distinct_owner", "per_signer", "global"];
 
-export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: GlobalEndpoint[] }) {
+export function ClientFormsTab() {
   const [rules, setRules] = useState<ClientFormRule[]>(CLIENT_FORM_RULES);
   const [search, setSearch] = useState("");
   const [filterOrg, setFilterOrg] = useState<string>("all");
@@ -365,8 +364,7 @@ export function ClientFormsTab({ globalEndpoints = [] }: { globalEndpoints?: Glo
             title={`${targetRule?.formName ?? "Form"}`}
             displayConditionJson={targetRule?.rulesJson ?? "{}"}
             eSignatureMappingJson={targetRule?.eSignatureMappingJson ?? "{}"}
-            endpoints={[{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf", endpointUsage: "pdf" as const, payloadTemplateJson: "{}" }]}
-            globalEndpoints={globalEndpoints}
+            endpoints={[{ id: "ep-quik", name: "Quik PDF", type: "quik_pdf" as const, tag: "pdf" as const, payloadTemplateJson: "{}" }]}
             onSave={(data) => handleRulesSave(rulesModalTarget, data)}
           />
         );

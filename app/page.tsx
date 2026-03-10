@@ -1,20 +1,12 @@
 "use client";
 
-import { useState } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Building2, Users, Globe } from "lucide-react";
+import { Building2, Users } from "lucide-react";
 import { CustodianFormsTab } from "@/components/custodian-forms-tab";
 import { ClientFormsTab } from "@/components/client-forms-tab";
-import { ManageEndpointsModal } from "@/components/manage-endpoints-modal";
-import type { GlobalEndpoint } from "@/lib/types";
-import { DEFAULT_GLOBAL_ENDPOINTS } from "@/lib/sample-data";
 
 export default function FormsManagementPage() {
-  const [globalEndpoints, setGlobalEndpoints] = useState<GlobalEndpoint[]>(DEFAULT_GLOBAL_ENDPOINTS);
-  const [endpointsModalOpen, setEndpointsModalOpen] = useState(false);
-
   return (
     <div className="h-screen flex flex-col overflow-hidden bg-background">
       {/* Page Header */}
@@ -29,28 +21,12 @@ export default function FormsManagementPage() {
                 Internal
               </Badge>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="gap-2"
-              onClick={() => setEndpointsModalOpen(true)}
-            >
-              <Globe className="h-4 w-4" />
-              Manage Endpoints
-            </Button>
           </div>
           <p className="text-base text-muted-foreground mt-2">
             Manage custodian and client form rules for account opening and envelope generation.
           </p>
         </div>
       </header>
-
-      <ManageEndpointsModal
-        open={endpointsModalOpen}
-        onOpenChange={setEndpointsModalOpen}
-        endpoints={globalEndpoints}
-        onEndpointsChange={setGlobalEndpoints}
-      />
 
       {/* Main Content */}
       <main className="flex-1 min-h-0 max-w-7xl w-full mx-auto px-6 pt-[28px] pb-3 flex flex-col">
@@ -67,11 +43,11 @@ export default function FormsManagementPage() {
           </TabsList>
 
           <TabsContent value="custodian" className="mt-0 flex-1 min-h-0 flex flex-col">
-            <CustodianFormsTab globalEndpoints={globalEndpoints} />
+            <CustodianFormsTab />
           </TabsContent>
 
           <TabsContent value="client" className="mt-0 flex-1 min-h-0 flex flex-col">
-            <ClientFormsTab globalEndpoints={globalEndpoints} />
+            <ClientFormsTab />
           </TabsContent>
         </Tabs>
       </main>

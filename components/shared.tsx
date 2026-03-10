@@ -109,12 +109,19 @@ export function EndpointsCell({ endpoints }: { endpoints: EndpointConfig[] }) {
           key={ep.id}
           variant="outline"
           className={`text-[10px] font-normal ${
-            ep.endpointUsage === "pdf"
+            ep.tag === "pdf"
               ? "bg-blue-50 text-blue-600 border-blue-200"
-              : "bg-amber-50 text-amber-600 border-amber-200"
+              : ep.tag === "esignature"
+              ? "bg-purple-50 text-purple-600 border-purple-200"
+              : "bg-gray-50 text-gray-600 border-gray-200"
           }`}
         >
-          {ep.name}
+          {ep.label || ep.name}
+          {ep.tag && (
+            <span className="ml-1 opacity-70">
+              {ep.tag === "pdf" ? "PDF" : "E-sig"}
+            </span>
+          )}
         </Badge>
       ))}
     </div>

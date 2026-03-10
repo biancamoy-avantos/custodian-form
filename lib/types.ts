@@ -34,6 +34,12 @@ export interface CustodianFormRule {
   rulesJson: string;
 
   /**
+   * JSON defining how form field data maps into API payloads.
+   * e.g. {"FormFields": [{"FieldName": "1rep.BDCompany", "FieldValue": "{{.firmName}}"}], ...}
+   */
+  payloadTemplateJson: string;
+
+  /**
    * JSON defining which fields receive e-signature tags.
    * e.g. {"1own": "firstSignerEmail", "2own": "secondSignerEmail"}
    */
@@ -42,7 +48,6 @@ export interface CustodianFormRule {
   /**
    * List of API endpoints this form calls.
    * Every custodian form calls Quik PDF. Some (Pershing) also call a custodian-specific API.
-   * Each endpoint carries its own payloadTemplateJson.
    */
   endpoints: EndpointConfig[];
 
@@ -52,12 +57,19 @@ export interface CustodianFormRule {
 
 export type EndpointUsage = "pdf" | "action";
 
+export type EndpointTag = "pdf" | "esignature";
+
 export interface EndpointConfig {
   id: string;
   name: string;
   type: "quik_pdf" | "pershing_api" | "box" | "custom";
   endpointUsage: EndpointUsage;
   url?: string;
+  tag?: EndpointTag | null;
+  tags?: EndpointTag[];
+  label?: string;
+  serviceId?: string;
+  endpointId?: string;
   payloadTemplateJson?: string;
 }
 
@@ -94,6 +106,7 @@ export interface ClientFormRule {
    */
   rulesJson: string;
 
+  payloadTemplateJson: string;
   eSignatureMappingJson: string;
 
   description: string;
